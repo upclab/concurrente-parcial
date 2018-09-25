@@ -2,11 +2,12 @@ package kmeans
 
 import (
 	"bytes"
-	"github.com/wcharczuk/go-chart"
 	"io/ioutil"
+
+	"github.com/wcharczuk/go-chart"
 )
 
-func draw(clusters []Cluster, outfile string) {
+func dodraw(clusters []Cluster, outfile string) {
 	var series []chart.Series
 
 	for i := 0; i < len(clusters); i++ {

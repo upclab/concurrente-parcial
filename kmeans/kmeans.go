@@ -67,13 +67,14 @@ func Run(dataset []Point, k int) []Cluster {
 
 /*RunWithDrawing runs the k-means algorithm given an array of coordinates and a specific k. Output charts in
 chart folder*/
-func RunWithDrawing(dataset []Point, k int) []Cluster {
+func RunWithDrawing(dataset []Point, k int, t *int) []Cluster {
 	pointsClusterIndex := make([]int, len(dataset))
 	clusters := initClusters(k)
 	hasChanged := true
 
-	draw(clusters, "charts/initial_centers.png")
-	for p := 0; hasChanged; p++ {
+	// dodraw(clusters, "charts/initial_centers.png")
+
+	for *t = 0; hasChanged; *t++ {
 		hasChanged = false
 		for i := 0; i < len(dataset); i++ {
 			var minDist float64
@@ -91,7 +92,7 @@ func RunWithDrawing(dataset []Point, k int) []Cluster {
 				hasChanged = true
 			}
 		}
-		draw(clusters, "charts/"+strconv.Itoa(p)+".png")
+		dodraw(clusters, "charts/"+strconv.Itoa(*t)+".png")
 		if hasChanged {
 			repositionCenters(clusters)
 		}
