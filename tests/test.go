@@ -1,46 +1,39 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
-func sync() {
+var wg sync.WaitGroup
+
+func runSync() {
 	for i := 1; i <= 5; i++ {
-		fmt.Printf("Iteracion %d: \n", i)
+		fmt.Printf("============== Iteration %d ==============\n", i)
 		for j := 1; j <= 8; j++ {
-			var a int
-			for k := 1; k <= 10; k++ {
-				a += j * k
-			}
-			fmt.Printf("Punto Suma %d - %d: %d\n", i, j, a)
+			fmt.Printf("            (%d) Function %d\n", i, j)
 		}
-		fmt.Printf("Fin Puntos Suma de %d\n\n", i)
+		fmt.Printf("============ End Iteration %d ============\n\n", i)
 	}
 }
 
-func async() {
+func runAsync() {
 	for i := 1; i <= 5; i++ {
-		ch := make(chan int)
+		fmt.Printf("============== Iteration %d ==============\n", i)
 
-		fmt.Printf("Iteracion %d: \n", i)
-
+		wg.Add(8)
 		for j := 1; j <= 8; j++ {
-			go func(iC int, jC int) {
-				var a int
-
-				for k := 0; k <= 10; k++ {
-					a += jC * k
-				}
-				ch <- a
-			}(i, j)
+			go func(jC int) {
+				fmt.Printf("            (%d) Function %d\n", i, jC)
+				wg.Done()
+			}(j)
 		}
+		wg.Wait()
 
-		for j := 1; j <= 8; j++ {
-			fmt.Printf("Punto Suma %d - %d: %d\n", i, j, <-ch)
-		}
-
-		fmt.Printf("Fin Puntos Suma de %d\n\n", i)
+		fmt.Printf("============ End Iteration %d ============\n\n", i)
 	}
 }
 
 func main() {
-	sync()
+	runAsync()
 }

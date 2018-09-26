@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -109,9 +110,10 @@ func RunSync(dataset []Point, k int, static bool) []Cluster {
 	return clusters
 }
 
+var wg sync.WaitGroup
+
 /*RunAsync runs asynchronously */
 func RunAsync(dataset []Point, k int, static bool) []Cluster {
-	ch := make(chan int)
 	start := time.Now()
 
 	t := 0
@@ -119,46 +121,46 @@ func RunAsync(dataset []Point, k int, static bool) []Cluster {
 
 	pointsClusterIndex := make([]int, len(dataset))
 	clusters := getClusters(k, static)
+	numberOfPoints := len(dataset)
 
 	// Just a dumb loop
-	for ; t < 17; t++ {
+	for ; pointCenterIsDifferent; t++ {
 		pointCenterIsDifferent = false
 
-		go func() {
-			// We loop through all the points
-			for i := 0; i < len(dataset); i++ {
+		wg.Add(numberOfPoints)
+		// We loop through all the points
+		for i := 0; i < numberOfPoints; i++ {
+			go func(iC int) {
 				var minDist float64
 				var updatedClusterIndex int
 
 				// Dummy loop just to check which center is the nearest
 				// to the current point
 				for j := 0; j < len(clusters); j++ {
-					tmpDist := dataset[i].Distance(clusters[j].Center)
+					tmpDist := dataset[iC].Distance(clusters[j].Center)
 					if minDist == 0 || tmpDist < minDist {
 						minDist = tmpDist
 						updatedClusterIndex = j
 					}
 				}
 
-				clusters[updatedClusterIndex].Points = append(clusters[updatedClusterIndex].Points, dataset[i])
+				clusters[updatedClusterIndex].Points = append(clusters[updatedClusterIndex].Points, dataset[iC])
 
 				// Continue condition: if the new index is different than the previous we continue
-				if pointsClusterIndex[i] != updatedClusterIndex {
-					pointsClusterIndex[i] = updatedClusterIndex
+				if pointsClusterIndex[iC] != updatedClusterIndex {
+					pointsClusterIndex[iC] = updatedClusterIndex
 					pointCenterIsDifferent = true
 				}
-			}
+				wg.Done()
+			}(i)
+		}
 
-			if pointCenterIsDifferent {
-				// Reposition each center to the its mean
-				repositionCenters(clusters)
-			}
-			ch <- t
-		}()
-	}
+		wg.Wait()
 
-	for ; t < 17; t++ {
-		fmt.Printf("Iteración %d\n", <-ch)
+		if pointCenterIsDifferent {
+			// Reposition each center to the its mean
+			repositionCenters(clusters)
+		}
 	}
 
 	logClusters(clusters)

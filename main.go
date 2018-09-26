@@ -56,11 +56,6 @@ func main() {
 		}
 	}
 
-	// d1 := []byte("")
-	// d1 = append(d1, []byte("Point{"+strconv.FormatFloat(rand.Float64(), 'f', 6, 64)+", "+strconv.FormatFloat(rand.Float64(), 'f', 6, 64)+"},\n")...)
-	// ioutil.WriteFile("prueba.txt", d1, 0644)
-	// os.Exit(1)
-
 	if *mode == ModeSync {
 		kmeans.RunSync(dataset, *k, *static)
 	} else if *mode == ModeAsync {
