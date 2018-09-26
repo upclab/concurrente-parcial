@@ -20,7 +20,6 @@ func MakeGif(t int) {
 
 	// load static image and construct outGif
 	outGif := &gif.GIF{}
-	outGif.LoopCount = 1
 	for _, name := range fileStrs {
 		f, _ := os.Open(name)
 		inPNG, _, _ := image.Decode(f)
