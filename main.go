@@ -23,13 +23,10 @@ func main() {
 	var dataset []kmeans.Point
 	rand.Seed(time.Now().UnixNano())
 
-	// t: number of iterations
-	var t *int
-	t = new(int)
-	*t = 0
-
 	k := flag.Int("k", 0, "number of clusters")
 	n := flag.Int("n", 0, "number of elements")
+	t := flag.Int("t", 20, "number of iterations")
+
 	makeGif := flag.Bool("gif", false, "wheter make gif or not")
 	static := flag.Bool("static", false, "don't random values")
 	mode := flag.String("mode", ModeSync, "Mode to run the program")
@@ -56,15 +53,17 @@ func main() {
 		}
 	}
 
+	// Clean charts directory
+	os.RemoveAll("./charts")
+	os.Mkdir("./charts", os.ModeDir)
+
 	if *mode == ModeSync {
+		*t = 0
 		kmeans.RunSync(dataset, *k, *static)
 	} else if *mode == ModeAsync {
-		kmeans.RunAsync(dataset, *k, *static)
+		kmeans.RunAsync(dataset, *k, *t, *static)
 	} else if *mode == ModeChart {
-		// Clean charts directory
-		os.RemoveAll("./charts")
-		os.Mkdir("./charts", os.ModeDir)
-
+		*t = 0
 		kmeans.RunWithDrawing(dataset, *k, t, *static)
 
 		// We are going to make a GIF when `gif` flag is true

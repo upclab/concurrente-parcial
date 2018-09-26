@@ -20,7 +20,7 @@ func (cluster *Cluster) pointsYValues() (pointsYValues []float64) {
 	return
 }
 
-func (cluster *Cluster) repositionCenter() {
+func (cluster *Cluster) repositionCenter(clearPoints bool) {
 	var x, y float64
 	var clusterCount = len(cluster.Points)
 
@@ -28,6 +28,8 @@ func (cluster *Cluster) repositionCenter() {
 		x = x + cluster.Points[i].X
 		y = y + cluster.Points[i].Y
 	}
-	cluster.Points = []Point{}
+	if clearPoints {
+		cluster.Points = []Point{}
+	}
 	cluster.Center = Point{x / float64(clusterCount), y / float64(clusterCount)}
 }

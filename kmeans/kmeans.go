@@ -54,9 +54,9 @@ func logClusters(clusters []Cluster) {
 	}
 }
 
-func repositionCenters(clusters []Cluster) {
+func repositionCenters(clusters []Cluster, clearPoints bool) {
 	for i := 0; i < len(clusters); i++ {
-		clusters[i].repositionCenter()
+		clusters[i].repositionCenter(clearPoints)
 	}
 }
 
@@ -100,73 +100,67 @@ func RunSync(dataset []Point, k int, static bool) []Cluster {
 
 		if pointCenterIsDifferent {
 			// Reposition each center to the its mean
-			repositionCenters(clusters)
+			repositionCenters(clusters, true)
 		}
 	}
 
 	logClusters(clusters)
 	elapsed := time.Since(start)
 	log.Printf("Sync algorithm with %s iterations took %s", strconv.Itoa(t), elapsed)
+	dodraw(clusters, "charts/sync.png")
 	return clusters
 }
 
 var wg sync.WaitGroup
 
-/*RunAsync runs asynchronously */
-func RunAsync(dataset []Point, k int, static bool) []Cluster {
-	start := time.Now()
-
-	t := 0
-	pointCenterIsDifferent := true
-
-	pointsClusterIndex := make([]int, len(dataset))
-	clusters := getClusters(k, static)
+func solveCluster(dataset []Point, clusters []Cluster, i int) {
 	numberOfPoints := len(dataset)
 
-	// Just a dumb loop
-	for ; pointCenterIsDifferent; t++ {
-		pointCenterIsDifferent = false
+	// We loop through all the points
+	for j := 0; j < numberOfPoints; j++ {
+		var minDist float64
+		var updatedClusterIndex int
 
-		wg.Add(numberOfPoints)
-		// We loop through all the points
-		for i := 0; i < numberOfPoints; i++ {
-			go func(iC int) {
-				var minDist float64
-				var updatedClusterIndex int
-
-				// Dummy loop just to check which center is the nearest
-				// to the current point
-				for j := 0; j < len(clusters); j++ {
-					tmpDist := dataset[iC].Distance(clusters[j].Center)
-					if minDist == 0 || tmpDist < minDist {
-						minDist = tmpDist
-						updatedClusterIndex = j
-					}
-				}
-
-				clusters[updatedClusterIndex].Points = append(clusters[updatedClusterIndex].Points, dataset[iC])
-
-				// Continue condition: if the new index is different than the previous we continue
-				if pointsClusterIndex[iC] != updatedClusterIndex {
-					pointsClusterIndex[iC] = updatedClusterIndex
-					pointCenterIsDifferent = true
-				}
-				wg.Done()
-			}(i)
+		// Dummy loop just to check which center is the nearest
+		// to the current point
+		for k := 0; k < len(clusters); k++ {
+			tmpDist := dataset[j].Distance(clusters[k].Center)
+			if minDist == 0 || tmpDist < minDist {
+				minDist = tmpDist
+				updatedClusterIndex = k
+			}
 		}
+		clusters[updatedClusterIndex].Points = append(clusters[updatedClusterIndex].Points, dataset[j])
+	}
+	repositionCenters(clusters, false)
+	dodraw(clusters, "charts/async"+strconv.Itoa(i)+".png")
+	wg.Done()
+}
 
-		wg.Wait()
+/*RunAsync runs asynchronously */
+func RunAsync(dataset []Point, k int, t int, static bool) []Cluster {
+	start := time.Now()
 
-		if pointCenterIsDifferent {
-			// Reposition each center to the its mean
-			repositionCenters(clusters)
-		}
+	solutions := make([][]Cluster, t)
+	for i := range solutions {
+		solutions[i] = getClusters(k, static)
 	}
 
-	logClusters(clusters)
+	wg.Add(t)
+
+	// Just a dumb loop
+	for i := 0; i < t; i++ {
+		go solveCluster(dataset, solutions[i], i)
+	}
+
+	wg.Wait()
+
+	lastSolution := solutions[t-1]
+
+	logClusters(lastSolution)
 	elapsed := time.Since(start)
 	log.Printf("Async algorithm with %s iterations took %s", strconv.Itoa(t), elapsed)
-	return clusters
+	return lastSolution
 }
 
 /*RunWithDrawing runs the k-means algorithm given an array of coordinates and a specific k*/
@@ -195,7 +189,7 @@ func RunWithDrawing(dataset []Point, k int, t *int, static bool) []Cluster {
 		}
 		dodraw(clusters, "charts/"+strconv.Itoa(*t)+".png")
 		if pointCenterIsDifferent {
-			repositionCenters(clusters)
+			repositionCenters(clusters, true)
 		}
 	}
 
