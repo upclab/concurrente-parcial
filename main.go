@@ -16,6 +16,9 @@ const ModeSync = "sync"
 /*ModeAsync executes the algorithm asynchronously*/
 const ModeAsync = "async"
 
+/*ModeBoth executes the algorithm synchronously and asynchronously*/
+const ModeBoth = "both"
+
 /*ModeChart executes the algorithm and creates a chart*/
 const ModeChart = "chart"
 
@@ -56,15 +59,18 @@ func main() {
 		}
 	}
 
+	// Clean charts directory
+	os.RemoveAll("./charts")
+	os.Mkdir("./charts", os.ModeDir)
+
 	if *mode == ModeSync {
 		kmeans.RunSync(dataset, *k, *static)
 	} else if *mode == ModeAsync {
 		kmeans.RunAsync(dataset, *k, *static)
+	} else if *mode == ModeBoth {
+		kmeans.RunSync(dataset, *k, *static)
+		kmeans.RunAsync(dataset, *k, *static)
 	} else if *mode == ModeChart {
-		// Clean charts directory
-		os.RemoveAll("./charts")
-		os.Mkdir("./charts", os.ModeDir)
-
 		kmeans.RunWithDrawing(dataset, *k, t, *static)
 
 		// We are going to make a GIF when `gif` flag is true

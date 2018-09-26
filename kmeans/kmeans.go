@@ -107,6 +107,7 @@ func RunSync(dataset []Point, k int, static bool) []Cluster {
 	logClusters(clusters)
 	elapsed := time.Since(start)
 	log.Printf("Sync algorithm with %s iterations took %s", strconv.Itoa(t), elapsed)
+	dodraw(clusters, "charts/sync.png")
 	return clusters
 }
 
@@ -166,6 +167,7 @@ func RunAsync(dataset []Point, k int, static bool) []Cluster {
 	logClusters(clusters)
 	elapsed := time.Since(start)
 	log.Printf("Async algorithm with %s iterations took %s", strconv.Itoa(t), elapsed)
+	dodraw(clusters, "charts/async.png")
 	return clusters
 }
 

@@ -7,15 +7,16 @@
 ## Uso ##
 
 ```bash
-$ go run main.go --k=3 --n=800
+$ go run main.go --k=10 --n=800 --mode=both
 # Para crear el GIF (Pero tiene mal performance)
-$ go run main.go --k=3 --n=800  --mode=chart --gif
+$ go run main.go --k=10 --n=800  --mode=chart --gif
 ```
 
 ## Modos ##
 
 - Síncrono (por defecto): `sync`
 - Asíncrono: `async`
+- Ambos: `both`
 - Gráficos: `chart`
 
 ## Recomendaciones ##
