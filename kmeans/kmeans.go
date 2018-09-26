@@ -45,11 +45,17 @@ func RunSync(dataset []Point, k int) []Cluster {
 	pointsClusterIndex := make([]int, len(dataset))
 	clusters := initClusters(k)
 
+	// Just a dumb loop
 	for ; hasChanged; t++ {
 		hasChanged = false
+
+		// We loop through all the points
 		for i := 0; i < len(dataset); i++ {
 			var minDist float64
 			var updatedClusterIndex int
+
+			// Dummy loop just to check which center is the nearest
+			// to the current point
 			for j := 0; j < len(clusters); j++ {
 				tmpDist := dataset[i].Distance(clusters[j].Center)
 				if minDist == 0 || tmpDist < minDist {
@@ -57,13 +63,18 @@ func RunSync(dataset []Point, k int) []Cluster {
 					updatedClusterIndex = j
 				}
 			}
+
 			clusters[updatedClusterIndex].Points = append(clusters[updatedClusterIndex].Points, dataset[i])
+
+			// Continue condition: if the new index is different than the previous we continue
 			if pointsClusterIndex[i] != updatedClusterIndex {
 				pointsClusterIndex[i] = updatedClusterIndex
 				hasChanged = true
 			}
 		}
+
 		if hasChanged {
+			// Reposition each center to the its mean
 			repositionCenters(clusters)
 		}
 	}
@@ -83,11 +94,17 @@ func RunAsync(dataset []Point, k int) []Cluster {
 	pointsClusterIndex := make([]int, len(dataset))
 	clusters := initClusters(k)
 
+	// Just a dumb loop
 	for ; hasChanged; t++ {
 		hasChanged = false
+
+		// We loop through all the points
 		for i := 0; i < len(dataset); i++ {
 			var minDist float64
 			var updatedClusterIndex int
+
+			// Dummy loop just to check which center is the nearest
+			// to the current point
 			for j := 0; j < len(clusters); j++ {
 				tmpDist := dataset[i].Distance(clusters[j].Center)
 				if minDist == 0 || tmpDist < minDist {
@@ -95,13 +112,18 @@ func RunAsync(dataset []Point, k int) []Cluster {
 					updatedClusterIndex = j
 				}
 			}
+
 			clusters[updatedClusterIndex].Points = append(clusters[updatedClusterIndex].Points, dataset[i])
+
+			// Continue condition: if the new index is different than the previous we continue
 			if pointsClusterIndex[i] != updatedClusterIndex {
 				pointsClusterIndex[i] = updatedClusterIndex
 				hasChanged = true
 			}
 		}
+
 		if hasChanged {
+			// Reposition each center to the its mean
 			repositionCenters(clusters)
 		}
 	}
