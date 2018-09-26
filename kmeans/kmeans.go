@@ -1,6 +1,7 @@
 package kmeans
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"strconv"
@@ -21,12 +22,35 @@ func centersY(clusters []Cluster) (centersY []float64) {
 	return
 }
 
-func initClusters(k int) (clusters []Cluster) {
+func getClusters(k int, static bool) []Cluster {
+	var actualLen int
+
+	if static {
+		actualLen = 4
+	} else {
+		actualLen = k
+	}
+	clusters := make([]Cluster, actualLen, actualLen)
+
+	if static {
+		clusters[0] = Cluster{Point{0.915438, 0.760661}, []Point{}}
+		clusters[1] = Cluster{Point{0.363143, 0.758002}, []Point{}}
+		clusters[2] = Cluster{Point{0.863991, 0.823953}, []Point{}}
+		clusters[3] = Cluster{Point{0.924190, 0.716877}, []Point{}}
+		return clusters
+	}
+
 	rand.Seed(time.Now().UnixNano())
 	for i := 0; i < k; i++ {
-		clusters = append(clusters, Cluster{Point{rand.Float64(), rand.Float64()}, []Point{}})
+		clusters[i] = Cluster{Point{rand.Float64(), rand.Float64()}, []Point{}}
 	}
-	return
+	return clusters
+}
+
+func logClusters(clusters []Cluster) {
+	for i := 0; i < len(clusters); i++ {
+		fmt.Printf("Center %d -> X: %f, Y: %f\n", i+1, clusters[i].Center.X, clusters[i].Center.Y)
+	}
 }
 
 func repositionCenters(clusters []Cluster) {
@@ -36,18 +60,18 @@ func repositionCenters(clusters []Cluster) {
 }
 
 /*RunSync runs synchronously */
-func RunSync(dataset []Point, k int) []Cluster {
+func RunSync(dataset []Point, k int, static bool) []Cluster {
 	start := time.Now()
 
 	t := 0
-	hasChanged := true
+	pointCenterIsDifferent := true
 
 	pointsClusterIndex := make([]int, len(dataset))
-	clusters := initClusters(k)
+	clusters := getClusters(k, static)
 
 	// Just a dumb loop
-	for ; hasChanged; t++ {
-		hasChanged = false
+	for ; pointCenterIsDifferent; t++ {
+		pointCenterIsDifferent = false
 
 		// We loop through all the points
 		for i := 0; i < len(dataset); i++ {
@@ -69,78 +93,88 @@ func RunSync(dataset []Point, k int) []Cluster {
 			// Continue condition: if the new index is different than the previous we continue
 			if pointsClusterIndex[i] != updatedClusterIndex {
 				pointsClusterIndex[i] = updatedClusterIndex
-				hasChanged = true
+				pointCenterIsDifferent = true
 			}
 		}
 
-		if hasChanged {
+		if pointCenterIsDifferent {
 			// Reposition each center to the its mean
 			repositionCenters(clusters)
 		}
 	}
 
+	logClusters(clusters)
 	elapsed := time.Since(start)
 	log.Printf("Sync algorithm with %s iterations took %s", strconv.Itoa(t), elapsed)
 	return clusters
 }
 
 /*RunAsync runs asynchronously */
-func RunAsync(dataset []Point, k int) []Cluster {
+func RunAsync(dataset []Point, k int, static bool) []Cluster {
+	ch := make(chan int)
 	start := time.Now()
 
 	t := 0
-	hasChanged := true
+	pointCenterIsDifferent := true
 
 	pointsClusterIndex := make([]int, len(dataset))
-	clusters := initClusters(k)
+	clusters := getClusters(k, static)
 
 	// Just a dumb loop
-	for ; hasChanged; t++ {
-		hasChanged = false
+	for ; t < 17; t++ {
+		pointCenterIsDifferent = false
 
-		// We loop through all the points
-		for i := 0; i < len(dataset); i++ {
-			var minDist float64
-			var updatedClusterIndex int
+		go func() {
+			// We loop through all the points
+			for i := 0; i < len(dataset); i++ {
+				var minDist float64
+				var updatedClusterIndex int
 
-			// Dummy loop just to check which center is the nearest
-			// to the current point
-			for j := 0; j < len(clusters); j++ {
-				tmpDist := dataset[i].Distance(clusters[j].Center)
-				if minDist == 0 || tmpDist < minDist {
-					minDist = tmpDist
-					updatedClusterIndex = j
+				// Dummy loop just to check which center is the nearest
+				// to the current point
+				for j := 0; j < len(clusters); j++ {
+					tmpDist := dataset[i].Distance(clusters[j].Center)
+					if minDist == 0 || tmpDist < minDist {
+						minDist = tmpDist
+						updatedClusterIndex = j
+					}
+				}
+
+				clusters[updatedClusterIndex].Points = append(clusters[updatedClusterIndex].Points, dataset[i])
+
+				// Continue condition: if the new index is different than the previous we continue
+				if pointsClusterIndex[i] != updatedClusterIndex {
+					pointsClusterIndex[i] = updatedClusterIndex
+					pointCenterIsDifferent = true
 				}
 			}
 
-			clusters[updatedClusterIndex].Points = append(clusters[updatedClusterIndex].Points, dataset[i])
-
-			// Continue condition: if the new index is different than the previous we continue
-			if pointsClusterIndex[i] != updatedClusterIndex {
-				pointsClusterIndex[i] = updatedClusterIndex
-				hasChanged = true
+			if pointCenterIsDifferent {
+				// Reposition each center to the its mean
+				repositionCenters(clusters)
 			}
-		}
-
-		if hasChanged {
-			// Reposition each center to the its mean
-			repositionCenters(clusters)
-		}
+			ch <- t
+		}()
 	}
 
+	for ; t < 17; t++ {
+		fmt.Printf("Iteración %d\n", <-ch)
+	}
+
+	logClusters(clusters)
 	elapsed := time.Since(start)
 	log.Printf("Async algorithm with %s iterations took %s", strconv.Itoa(t), elapsed)
 	return clusters
 }
 
 /*RunWithDrawing runs the k-means algorithm given an array of coordinates and a specific k*/
-func RunWithDrawing(dataset []Point, k int, t *int) []Cluster {
+func RunWithDrawing(dataset []Point, k int, t *int, static bool) []Cluster {
 	pointsClusterIndex := make([]int, len(dataset))
-	clusters := initClusters(k)
-	hasChanged := true
+	clusters := getClusters(k, static)
+	pointCenterIsDifferent := true
 
-	for *t = 0; hasChanged; *t++ {
-		hasChanged = false
+	for *t = 0; pointCenterIsDifferent; *t++ {
+		pointCenterIsDifferent = false
 		for i := 0; i < len(dataset); i++ {
 			var minDist float64
 			var updatedClusterIndex int
@@ -154,11 +188,11 @@ func RunWithDrawing(dataset []Point, k int, t *int) []Cluster {
 			clusters[updatedClusterIndex].Points = append(clusters[updatedClusterIndex].Points, dataset[i])
 			if pointsClusterIndex[i] != updatedClusterIndex {
 				pointsClusterIndex[i] = updatedClusterIndex
-				hasChanged = true
+				pointCenterIsDifferent = true
 			}
 		}
 		dodraw(clusters, "charts/"+strconv.Itoa(*t)+".png")
-		if hasChanged {
+		if pointCenterIsDifferent {
 			repositionCenters(clusters)
 		}
 	}
