@@ -114,7 +114,7 @@ func RunSync(dataset []Point, k int, static bool) []Cluster {
 var wg sync.WaitGroup
 
 /*RunAsync runs asynchronously */
-func RunAsync(dataset []Point, k int, static bool) []Cluster {
+func RunAsync(dataset []Point, k int, th int, static bool) []Cluster {
 	start := time.Now()
 
 	t := 0
@@ -128,7 +128,6 @@ func RunAsync(dataset []Point, k int, static bool) []Cluster {
 	for ; pointCenterIsDifferent; t++ {
 		pointCenterIsDifferent = false
 
-		th := 4
 		wg.Add(th)
 		for ix := 0; ix < th; ix++ {
 			go func(idx int) {

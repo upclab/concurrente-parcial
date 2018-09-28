@@ -31,6 +31,7 @@ func main() {
 	t = new(int)
 	*t = 0
 
+	th := flag.Int("th", 4, "number of processors")
 	k := flag.Int("k", 0, "number of clusters")
 	n := flag.Int("n", 0, "number of elements")
 	makeGif := flag.Bool("gif", false, "wheter make gif or not")
@@ -66,10 +67,10 @@ func main() {
 	if *mode == ModeSync {
 		kmeans.RunSync(dataset, *k, *static)
 	} else if *mode == ModeAsync {
-		kmeans.RunAsync(dataset, *k, *static)
+		kmeans.RunAsync(dataset, *k, *th, *static)
 	} else if *mode == ModeBoth {
 		kmeans.RunSync(dataset, *k, *static)
-		kmeans.RunAsync(dataset, *k, *static)
+		kmeans.RunAsync(dataset, *k, *th, *static)
 	} else if *mode == ModeChart {
 		kmeans.RunWithDrawing(dataset, *k, t, *static)
 
