@@ -22,3 +22,10 @@ $ go run main.go --k=10 --n=800  --mode=chart --gif
 ## Recomendaciones ##
 
 - No dar un valor al *k* mayor a 50
+
+
+## Integrantes ##
+
+- Diego Jara
+- Mauricio Rivas
+- Daniel Aragon

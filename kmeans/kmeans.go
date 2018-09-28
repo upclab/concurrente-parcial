@@ -128,34 +128,36 @@ func RunAsync(dataset []Point, k int, static bool) []Cluster {
 	for ; pointCenterIsDifferent; t++ {
 		pointCenterIsDifferent = false
 
-		wg.Add(numberOfPoints)
-		// We loop through all the points
-		for i := 0; i < numberOfPoints; i++ {
-			go func(iC int) {
-				var minDist float64
-				var updatedClusterIndex int
+		th := 4
+		wg.Add(th)
+		for ix := 0; ix < th; ix++ {
+			go func(idx int) {
+				// We loop through all the points
+				for k := idx; k < numberOfPoints; k += th {
+					var minDist float64
+					var updatedClusterIndex int
 
-				// Dummy loop just to check which center is the nearest
-				// to the current point
-				for j := 0; j < len(clusters); j++ {
-					tmpDist := dataset[iC].Distance(clusters[j].Center)
-					if minDist == 0 || tmpDist < minDist {
-						minDist = tmpDist
-						updatedClusterIndex = j
+					// Dummy loop just to check which center is the nearest
+					// to the current point
+					for j := 0; j < len(clusters); j++ {
+						tmpDist := dataset[k].Distance(clusters[j].Center)
+						if minDist == 0 || tmpDist < minDist {
+							minDist = tmpDist
+							updatedClusterIndex = j
+						}
+					}
+
+					clusters[updatedClusterIndex].Points = append(clusters[updatedClusterIndex].Points, dataset[k])
+
+					// Continue condition: if the new index is different than the previous we continue
+					if pointsClusterIndex[k] != updatedClusterIndex {
+						pointsClusterIndex[k] = updatedClusterIndex
+						pointCenterIsDifferent = true
 					}
 				}
-
-				clusters[updatedClusterIndex].Points = append(clusters[updatedClusterIndex].Points, dataset[iC])
-
-				// Continue condition: if the new index is different than the previous we continue
-				if pointsClusterIndex[iC] != updatedClusterIndex {
-					pointsClusterIndex[iC] = updatedClusterIndex
-					pointCenterIsDifferent = true
-				}
 				wg.Done()
-			}(i)
+			}(ix)
 		}
-
 		wg.Wait()
 
 		if pointCenterIsDifferent {
